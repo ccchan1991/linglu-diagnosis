@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>聆鹿 · 家长自驱力诊断引擎</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #f5f7fa; min-height: 100vh; padding: 20px; }
+.container { max-width: 800px; margin: 0 auto; }
+.brand { text-align: center; padding: 20px 0 28px; }
+.brand-inner { display: inline-flex; align-items: center; gap: 10px; background: white; padding: 8px 20px; border-radius: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.brand-logo { width: 32px; height: 32px; background: #1677ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px; }
+.brand-title { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+.brand-sub { font-size: 13px; color: #999; margin-top: 10px; }
+.step-nav { display: flex; justify-content: center; gap: 6px; margin-bottom: 28px; flex-wrap: wrap; }
+.step-item { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 20px; background: white; color: #999; font-size: 13px; font-weight: 600; transition: all 0.3s; box-shadow: 0 1px 4px rgba(0,0,0,0.04); cursor: pointer; border: none; }
+.step-item.active { background: #1677ff; color: white; box-shadow: 0 2px 8px rgba(22,119,255,0.3); }
+.step-item.completed { background: #52c41a; color: white; }
+.step-divider { width: 20px; height: 2px; background: #e0e0e0; align-self: center; }
+.panel { display: none; }
+.panel.active { display: block; }
+.card { background: white; border-radius: 16px; padding: 28px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+.section-title { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.badge { background: #1677ff; color: white; padding: 3px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+.title-text { font-size: 18px; font-weight: 700; color: #1a1a1a; }
+.section-desc { font-size: 13px; color: #999; margin-bottom: 24px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+@media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+.form-label { display: block; font-size: 13px; font-weight: 600; color: #333; margin-bottom: 6px; }
+.form-label .required { color: #ff4d4f; }
+.form-select, .form-input, .form-textarea { width: 100%; padding: 12px 14px; border: 2px solid #e8e8e8; border-radius: 10px; font-size: 14px; outline: none; background: white; }
+.form-textarea { min-height: 140px; resize: vertical; line-height: 1.6; }
+.form-select:focus, .form-input:focus, .form-textarea:focus { border-color: #1677ff; }
+.char-count { display: flex; justify-content: space-between; margin-top: 6px; font-size: 12px; color: #999; }
+.tag-group { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+.tag-btn { padding: 8px 16px; border: 2px solid #e8e8e8; border-radius: 20px; background: white; font-size: 13px; color: #666; cursor: pointer; transition: all 0.2s; }
+.tag-btn:hover { border-color: #1677ff; color: #1677ff; }
+.tag-btn.active { background: #1677ff; color: white; border-color: #1677ff; }
+.example-box { background: #f6f7f9; border-radius: 10px; padding: 14px 16px; margin-bottom: 20px; }
+.example-title { font-size: 12px; color: #999; font-weight: 600; margin-bottom: 8px; }
+.example-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.example-btn { padding: 6px 12px; border: 1px solid #d9d9d9; border-radius: 6px; background: white; font-size: 12px; color: #666; cursor: pointer; transition: all 0.2s; }
+.example-btn:hover { border-color: #1677ff; color: #1677ff; }
+.btn-primary { width: 100%; padding: 16px; background: #1677ff; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-primary:hover { background: #4096ff; }
+.btn-primary:disabled { background: #bfbfbf; cursor: not-allowed; }
+.btn-secondary { padding: 14px; background: white; color: #666; border: 2px solid #e8e8e8; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.btn-secondary:hover { border-color: #1677ff; color: #1677ff; }
+.loading-wrap { text-align: center; padding: 40px 0; }
+.loading-spinner { position: relative; width: 60px; height: 60px; margin: 0 auto 20px; }
+.loading-spinner::before { content: ''; position: absolute; inset: 0; border: 3px solid #f0f0f0; border-radius: 50%; }
+.loading-spinner::after { content: ''; position: absolute; inset: 0; border: 3px solid transparent; border-top-color: #1677ff; border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 14px; color: #666; font-weight: 600; margin-bottom: 6px; }
+.loading-detail { font-size: 12px; color: #999; }
+.result-card { background: #fff2f0; border: 1px solid #ffccc7; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+.result-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.result-badge { background: #ff4d4f; color: white; padding: 2px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+.result-code { font-size: 13px; color: #ff4d4f; font-weight: 600; }
+.result-name { font-size: 17px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; }
+.result-summary { font-size: 14px; color: #666; line-height: 1.7; }
+.dim-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 24px; }
+@media (max-width: 600px) { .dim-grid { grid-template-columns: repeat(2, 1fr); } }
+.dim-card { background: #f6f7f9; border-radius: 10px; padding: 14px; text-align: center; border: 2px solid transparent; transition: all 0.2s; }
+.dim-card.highlight { border-color: #1677ff; background: #e6f7ff; }
+.dim-label { font-size: 12px; color: #999; margin-bottom: 6px; }
+.dim-score { font-size: 24px; font-weight: 700; color: #333; }
+.dim-level { font-size: 11px; margin-top: 4px; font-weight: 600; }
+.dim-bar { height: 4px; background: #e0e0e0; border-radius: 2px; margin-top: 8px; overflow: hidden; }
+.dim-bar-fill { height: 100%; border-radius: 2px; transition: width 0.8s; }
+.dim-note { font-size: 10px; color: #999; margin-top: 4px; }
+.keyword-wrap { margin-bottom: 20px; }
+.keyword-title { font-size: 13px; font-weight: 600; color: #333; margin-bottom: 10px; }
+.keyword-list { display: flex; gap: 6px; flex-wrap: wrap; }
+.keyword-tag { padding: 4px 10px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+.keyword-tag.pos { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+.keyword-tag.neg { background: #fff2f0; color: #ff4d4f; border: 1px solid #ffccc7; }
+.priority-box { background: #e6f7ff; border-radius: 10px; padding: 16px; margin-bottom: 20px; }
+.priority-title { font-size: 13px; font-weight: 600; color: #1677ff; margin-bottom: 8px; }
+.priority-text { font-size: 13px; color: #333; line-height: 1.8; }
+.ver-tabs { display: flex; gap: 8px; margin-bottom: 20px; background: #f6f7f9; padding: 4px; border-radius: 12px; }
+.ver-tab { flex: 1; padding: 10px; border: none; border-radius: 8px; background: transparent; color: #666; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.ver-tab.active { background: #1677ff; color: white; }
+.ver-content { display: none; }
+.ver-content.active { display: block; }
+.content-card { background: #f6f7f9; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.content-card.green { background: #f6ffed; border: 1px solid #b7eb8f; }
+.content-card.orange { background: #fff7e6; border: 1px solid #ffd591; }
+.content-card.blue { background: #e6f7ff; }
+.content-card-title { font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+.content-card-body { font-size: 14px; color: #333; line-height: 1.8; }
+.action-step { display: flex; gap: 10px; margin-bottom: 12px; }
+.action-num { flex-shrink: 0; width: 24px; height: 24px; background: #fa8c16; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+.action-text { font-size: 14px; color: #333; line-height: 1.6; }
+.vote-wrap { margin-top: 20px; text-align: center; }
+.vote-title { font-size: 13px; color: #999; margin-bottom: 10px; }
+.vote-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.vote-btn { padding: 8px 20px; border-radius: 20px; background: white; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+.vote-btn:hover { transform: scale(1.05); }
+.vote-btn.v-expert { border: 2px solid #1677ff; color: #1677ff; }
+.vote-btn.v-analogy { border: 2px solid #52c41a; color: #52c41a; }
+.vote-btn.v-action { border: 2px solid #fa8c16; color: #fa8c16; }
+.vote-btn.selected { transform: scale(1.05); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.archive-card { border: 2px solid #e8e8e8; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+.archive-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #f0f0f0; flex-wrap: wrap; gap: 10px; }
+.archive-title { font-size: 18px; font-weight: 700; color: #1a1a1a; }
+.archive-meta { font-size: 12px; color: #999; margin-top: 4px; }
+.archive-badge { background: #fff2f0; color: #ff4d4f; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.archive-section { margin-bottom: 20px; }
+.archive-section-title { font-size: 12px; color: #999; font-weight: 600; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+.archive-section-body { font-size: 14px; color: #333; line-height: 1.7; }
+.archive-box { background: #f9f9f9; padding: 14px; border-radius: 8px; }
+.archive-highlight { padding: 12px; border-radius: 8px; font-size: 13px; }
+.track-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+@media (max-width: 600px) { .track-grid { grid-template-columns: repeat(4, 1fr); } }
+.track-day { text-align: center; padding: 10px; border-radius: 8px; background: #f6f7f9; cursor: pointer; transition: all 0.2s; }
+.track-day:hover { transform: scale(1.05); }
+.track-day-label { font-size: 11px; color: #999; margin-bottom: 4px; }
+.track-day-icon { width: 32px; height: 32px; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #999; background: #e0e0e0; }
+.track-day.done .track-day-icon { background: #52c41a; color: white; }
+.track-day.partial .track-day-icon { background: #faad14; color: white; }
+.track-day.done { background: #f6ffed; }
+.track-day.partial { background: #fff7e6; }
+.cta-box { background: #e6f7ff; border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 20px; }
+.cta-title { font-size: 17px; font-weight: 700; color: #1677ff; margin-bottom: 8px; }
+.cta-price { font-size: 20px; font-weight: 700; color: #ff4d4f; margin-bottom: 16px; }
+.cta-price del { font-size: 13px; color: #999; font-weight: 400; margin-left: 6px; }
+.cta-features { font-size: 13px; color: #666; margin-bottom: 20px; line-height: 1.8; }
+.cta-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.cta-btn-primary { padding: 14px 32px; background: #1677ff; color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(22,119,255,0.3); }
+.cta-btn-secondary { padding: 14px 32px; background: white; color: #1677ff; border: 2px solid #1677ff; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; }
+.footer { text-align: center; padding: 20px; font-size: 12px; color: #ccc; }
+.fade-in { animation: fadeIn 0.4s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="brand">
+    <div class="brand-inner">
+      <div class="brand-logo">聆</div>
+      <span class="brand-title">聆鹿 · 自驱力诊断引擎</span>
+    </div>
+    <p class="brand-sub">基于五维评估模型 · 12种问题类型判定 · 动态方案生成</p>
+  </div>
+
+  <div class="step-nav">
+    <div class="step-item active" data-step="1" onclick="goPanel(1)"><span>1</span> 场景采集</div>
+    <div class="step-divider"></div>
+    <div class="step-item" data-step="2" onclick="goPanel(2)"><span>2</span> AI诊断</div>
+    <div class="step-divider"></div>
+    <div class="step-item" data-step="3" onclick="goPanel(3)"><span>3</span> 方案生成</div>
+    <div class="step-divider"></div>
+    <div class="step-item" data-step="4" onclick="goPanel(4)"><span>4</span> 档案与追踪</div>
+  </div>
+
+  <div class="panel active" id="panel-1">
+    <div class="card">
+      <div class="section-title">
+        <span class="badge">第一步</span>
+        <span class="title-text">描述具体场景</span>
+      </div>
+      <p class="section-desc">不要笼统说"孩子不自律"，请描述一个让你崩溃的具体瞬间。越具体，诊断越准。</p>
+
+      <div class="form-grid">
+        <div>
+          <label class="form-label">孩子年龄 <span class="required">*</span></label>
+          <select class="form-select" id="child-age">
+            <option value="">请选择</option>
+            <option value="6-8">6-8岁（小学低段）</option>
+            <option value="9-11">9-11岁（小学高段）</option>
+            <option value="12-14">12-14岁（初中）</option>
+            <option value="15-18">15-18岁（高中）</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">持续时间 <span class="required">*</span></label>
+          <select class="form-select" id="duration">
+            <option value="">请选择</option>
+            <option value="new">刚开始（<1个月）</option>
+            <option value="short">1-3个月</option>
+            <option value="long">半年以上</option>
+            <option value="always">一直这样</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">场景类型</label>
+          <select class="form-select" id="scene-type">
+            <option value="">请选择（可选）</option>
+            <option value="homework">写作业</option>
+            <option value="read">阅读/看书</option>
+            <option value="practice">练琴/练舞</option>
+            <option value="study">自主学习</option>
+            <option value="other">其他</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <label class="form-label">具体发生了什么？ <span class="required">*</span></label>
+        <textarea class="form-textarea" id="scene-desc" placeholder="例：昨晚数学作业，孩子坐在桌前2小时，只写了3道题。中间去了3次厕所，玩了2次橡皮，我催了5次，最后吼了他才写完。他说'我就是不想写'..."></textarea>
+        <div class="char-count">
+          <span>建议50-200字，包含：时间、任务、孩子行为、你的反应</span>
+          <span id="char-count">0字</span>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 24px;">
+        <label class="form-label">你之前试过什么方法？（可多选）</label>
+        <div class="tag-group">
+          <button class="tag-btn" data-val="催">反复催促</button>
+          <button class="tag-btn" data-val="吼">吼/责骂</button>
+          <button class="tag-btn" data-val="奖励">物质奖励</button>
+          <button class="tag-btn" data-val="陪写">全程陪写</button>
+          <button class="tag-btn" data-val="不管">完全不管</button>
+          <button class="tag-btn" data-val="报班">报补习班</button>
+          <button class="tag-btn" data-val="计时">番茄钟/计时</button>
+          <button class="tag-btn" data-val="计划">做计划表</button>
+        </div>
+      </div>
+
+      <div class="example-box">
+        <div class="example-title">快速示例（点击填入测试）</div>
+        <div class="example-btns">
+          <button class="example-btn" onclick="fillExample(1)">完美主义拖延</button>
+          <button class="example-btn" onclick="fillExample(2)">注意力分散</button>
+          <button class="example-btn" onclick="fillExample(3)">对抗型</button>
+          <button class="example-btn" onclick="fillExample(4)">全面瘫痪</button>
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="runDiagnosis()" id="btn-diagnose">
+        <span>开始 AI 诊断</span>
+        <span style="font-size: 13px; opacity: 0.8;">→</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-2">
+    <div class="card">
+      <div class="section-title">
+        <span class="badge">第二步</span>
+        <span class="title-text">AI 诊断分析</span>
+      </div>
+      <p class="section-desc">基于五维模型分析场景文本，识别问题类型</p>
+
+      <div class="loading-wrap" id="diagnosis-loading">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">正在分析场景文本...</div>
+        <div class="loading-detail">匹配关键词库 · 计算五维评分</div>
+      </div>
+
+      <div id="diagnosis-result" style="display: none;">
+        <div class="result-card">
+          <div class="result-header">
+            <span class="result-badge">核心诊断</span>
+            <span class="result-code" id="result-code">B1</span>
+          </div>
+          <div class="result-name" id="result-name">环境干扰型注意力分散</div>
+          <div class="result-summary" id="result-summary">孩子能启动任务，但注意力像漏勺，环境里的任何刺激都能把思绪拉走。</div>
+        </div>
+
+        <div style="margin-bottom: 24px;">
+          <div style="font-size: 13px; font-weight: 600; color: #333; margin-bottom: 14px;">五维评估雷达</div>
+          <div class="dim-grid">
+            <div class="dim-card" id="dim-start">
+              <div class="dim-label">任务启动</div>
+              <div class="dim-score" id="score-start">65</div>
+              <div class="dim-level" id="level-start" style="color: #52c41a;">良好</div>
+              <div class="dim-bar"><div class="dim-bar-fill" id="bar-start" style="width: 65%; background: #52c41a;"></div></div>
+            </div>
+            <div class="dim-card" id="dim-attention">
+              <div class="dim-label">持续注意力</div>
+              <div class="dim-score" id="score-attention">22</div>
+              <div class="dim-level" id="level-attention" style="color: #ff4d4f;">严重缺失</div>
+              <div class="dim-bar"><div class="dim-bar-fill" id="bar-attention" style="width: 22%; background: #ff4d4f;"></div></div>
+            </div>
+            <div class="dim-card" id="dim-motivation">
+              <div class="dim-label">内在动机</div>
+              <div class="dim-score" id="score-motivation">50</div>
+              <div class="dim-level" id="level-motivation" style="color: #faad14;">中等</div>
+              <div class="dim-bar"><div class="dim-bar-fill" id="bar-motivation" style="width: 50%; background: #faad14;"></div></div>
+            </div>
+            <div class="dim-card" id="dim-emotion">
+              <div class="dim-label">情绪调节</div>
+              <div class="dim-score" id="score-emotion">55</div>
+              <div class="dim-level" id="level-emotion" style="color: #faad14;">中等</div>
+              <div class="dim-bar"><div class="dim-bar-fill" id="bar-emotion" style="width: 55%; background: #faad14;"></div></div>
+            </div>
+            <div class="dim-card" id="dim-parent">
+              <div class="dim-label">家长干预</div>
+              <div class="dim-score" id="score-parent">40</div>
+              <div class="dim-level" id="level-parent" style="color: #52c41a;">适中</div>
+              <div class="dim-bar"><div class="dim-bar-fill" id="bar-parent" style="width: 40%; background: #52c41a;"></div></div>
+              <div class="dim-note">反向指标</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="keyword-wrap">
+          <div class="keyword-title">场景关键词识别</div>
+          <div class="keyword-list" id="keyword-tags"></div>
+        </div>
+
+        <div class="priority-box">
+          <div class="priority-title">干预优先级</div>
+          <div class="priority-text" id="priority-list"></div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 12px;">
+        <button class="btn-secondary" onclick="goPanel(1)" style="flex: 1;">重新描述</button>
+        <button class="btn-primary" onclick="goPanel(3)" id="btn-to-solution" style="flex: 2; display: none;">查看方案 →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-3">
+    <div class="card">
+      <div class="section-title">
+        <span class="badge">第三步</span>
+        <span class="title-text">分层方案生成</span>
+      </div>
+      <p class="section-desc">同一套方案，三种讲法。选你今天就能用的。</p>
+
+      <div class="ver-tabs">
+        <button class="ver-tab active" data-ver="expert" onclick="switchVer('expert')">专家版</button>
+        <button class="ver-tab" data-ver="analogy" onclick="switchVer('analogy')">类比版</button>
+        <button class="ver-tab" data-ver="action" onclick="switchVer('action')">行动版</button>
+      </div>
+
+      <div class="ver-content active" id="ver-expert">
+        <div class="content-card blue">
+          <div class="content-card-title" style="color: #1677ff;">问题本质</div>
+          <div class="content-card-body" id="expert-essence"></div>
+        </div>
+        <div class="content-card blue">
+          <div class="content-card-title" style="color: #1677ff;">成因分析</div>
+          <div class="content-card-body" id="expert-cause"></div>
+        </div>
+        <div class="content-card blue">
+          <div class="content-card-title" style="color: #1677ff;">干预方向</div>
+          <div class="content-card-body" id="expert-direction"></div>
+        </div>
+      </div>
+
+      <div class="ver-content" id="ver-analogy">
+        <div class="content-card green">
+          <div class="content-card-title" style="color: #52c41a;">给孩子讲的故事</div>
+          <div class="content-card-body" id="analogy-story"></div>
+        </div>
+        <div class="content-card green">
+          <div class="content-card-title" style="color: #52c41a;">任务拆解比喻</div>
+          <div class="content-card-body" id="analogy-task"></div>
+        </div>
+        <div class="content-card green">
+          <div class="content-card-title" style="color: #52c41a;">鼓励话术</div>
+          <div class="content-card-body" id="analogy-encourage"></div>
+        </div>
+      </div>
+
+      <div class="ver-content" id="ver-action">
+        <div class="content-card orange">
+          <div class="content-card-title" style="color: #fa8c16; font-size: 14px;">今晚就做这3件事</div>
+          <div class="content-card-body" id="action-steps"></div>
+        </div>
+        <div class="content-card orange">
+          <div class="content-card-title" style="color: #fa8c16;">家长行为调整</div>
+          <div class="content-card-body" id="action-parent"></div>
+        </div>
+        <div class="content-card orange">
+          <div class="content-card-title" style="color: #fa8c16;">预期效果时间线</div>
+          <div class="content-card-body" id="action-timeline"></div>
+        </div>
+      </div>
+
+      <div class="vote-wrap">
+        <div class="vote-title">哪个版本对你最有用？（帮助我们优化推荐）</div>
+        <div class="vote-btns">
+          <button class="vote-btn v-expert" onclick="voteVer('expert')">专家版</button>
+          <button class="vote-btn v-analogy" onclick="voteVer('analogy')">类比版</button>
+          <button class="vote-btn v-action" onclick="voteVer('action')">行动版</button>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 12px; margin-top: 24px;">
+        <button class="btn-secondary" onclick="goPanel(2)" style="flex: 1;">诊断详情</button>
+        <button class="btn-primary" onclick="goPanel(4)" style="flex: 2;">生成自律档案 →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-4">
+    <div class="card">
+      <div class="section-title">
+        <span class="badge">第四步</span>
+        <span class="title-text">「我家孩子的自律档案」</span>
+      </div>
+      <p class="section-desc">保存诊断结果，开启7天追踪计划</p>
+
+      <div class="archive-card">
+        <div class="archive-header">
+          <div>
+            <div class="archive-title">自律档案 #<span id="archive-id">001</span></div>
+            <div class="archive-meta">生成时间：2026年7月15日 · 聆鹿自驱力诊断引擎</div>
+          </div>
+          <div class="archive-badge" id="archive-badge">B1 环境干扰型</div>
+        </div>
+
+        <div class="archive-section">
+          <div class="archive-section-title">场景摘要</div>
+          <div class="archive-section-body">
+            <div class="archive-box" id="archive-scene"></div>
+          </div>
+        </div>
+
+        <div class="archive-section">
+          <div class="archive-section-title">诊断结论</div>
+          <div class="archive-section-body">
+            <span style="display: inline-block; background: #fff2f0; color: #ff4d4f; padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-right: 6px;">核心问题</span>
+            <span id="archive-core"></span>
+            <div class="archive-highlight" style="background: #e6f7ff; color: #1677ff; margin-top: 10px;">
+              <strong>干预方向：</strong><span id="archive-direction"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="archive-section">
+          <div class="archive-section-title">五维快照</div>
+          <div class="archive-section-body" id="archive-radar"></div>
+        </div>
+
+        <div class="archive-section">
+          <div class="archive-section-title">行动方案</div>
+          <div class="archive-section-body" id="archive-action"></div>
+        </div>
+
+        <div class="archive-section">
+          <div class="archive-section-title">7天追踪打卡</div>
+          <div class="archive-section-body">
+            <div class="track-grid" id="archive-track"></div>
+            <p style="font-size: 12px; color: #999; margin-top: 10px; text-align: center;">点击圆圈记录每天完成情况</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="cta-box">
+        <div class="cta-title">加入 7 天自驱力急救营</div>
+        <p style="font-size: 14px; color: #666; margin-bottom: 6px;">档案已生成，但改变需要持续追踪</p>
+        <div class="cta-price">¥39.9 <del>¥199</del></div>
+        <div class="cta-features">
+          7天每日微行动推送<br>
+          老师一对一方案点评<br>
+          同频家长互助群<br>
+          第7天生成变化对比报告
+        </div>
+        <div class="cta-btns">
+          <button class="cta-btn-primary">立即加入急救营</button>
+          <button class="cta-btn-secondary" onclick="saveArchive()">保存档案</button>
+        </div>
+      </div>
+
+      <div style="background: #f6f7f9; border-radius: 12px; padding: 20px; text-align: center;">
+        <div style="font-size: 14px; font-weight: 600; color: #333; margin-bottom: 12px;">还有其他场景需要诊断？</div>
+        <button class="btn-secondary" onclick="resetAll()">再诊断一个场景</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">聆鹿教育科技 · 本工具仅供学习辅助，不构成专业诊断</div>
+</div>
+
+<script>
+const keywordDB = {
+  start: {
+    pos: ['主动写','自己开始','主动开始','自觉','主动'],
+    neg: ['拖延','不催不动','催了才写','等提醒','不知道从哪里开始','发呆','磨蹭','先玩再说','明天再说','想好了再写','怕写错','怕做错','不敢开始'],
+    weights: { pos: 15, neg: -15 }
+  },
+  attention: {
+    pos: ['专注','一口气写完','认真','投入'],
+    neg: ['橡皮','铅笔','厕所','喝水','窗外','走来走去','走神','发呆','小动作','一会儿','坐不住','玩','摸','看','动'],
+    weights: { pos: 15, neg: -15 }
+  },
+  motivation: {
+    pos: ['有兴趣','想学好','目标','主动','愿意'],
+    neg: ['不想做','抵触','抗拒','敷衍','随便','没意思','无聊','盼着','为了完成','被迫','不想写','不愿意'],
+    weights: { pos: 12, neg: -18 }
+  },
+  emotion: {
+    pos: ['冷静','尝试','坚持','耐心'],
+    neg: ['哭','发脾气','摔东西','不干了','放弃','崩溃','闹情绪','烦躁','焦虑','挫败','生气','发火'],
+    weights: { pos: 12, neg: -18 }
+  },
+  parent: {
+    pos: ['放手','不催','提醒','不管'],
+    neg: ['催','吼','骂','盯着','陪着写','帮他整理','代做','提醒很多次','忍不住','急','焦虑','管','控制'],
+    weights: { pos: -10, neg: 15 }
+  }
+};
+
+const problemTypes = {
+  'A1': { name: '完美主义拖延', summary: '孩子不是不想做，而是怕做错。启动困难的背后是对"不完美"的恐惧。',
+    rule: (s) => s.start < 30 && s.motivation > 50 && s.emotion < 40 },
+  'A2': { name: '任务过载瘫痪', summary: '任务太多，不知从何开始。孩子被作业量压垮了。',
+    rule: (s) => s.start < 30 && s.attention < 40 && s.motivation < 30 },
+  'A3': { name: '依赖启动型', summary: '习惯了被催，没人催就不动。外部依赖已形成行为惯性。',
+    rule: (s) => s.start < 30 && s.parent > 70 },
+  'B1': { name: '环境干扰型注意力分散', summary: '孩子能启动，但注意力像漏勺，环境里的任何刺激都能把思绪拉走。',
+    rule: (s) => s.attention < 30 && s.start > 50 },
+  'B2': { name: '任务厌倦型注意力分散', summary: '对任务本身没兴趣，无法专注。注意力问题背后是动机问题。',
+    rule: (s) => s.attention < 30 && s.motivation < 30 },
+  'B3': { name: '多任务切换型', summary: '同时想做多件事，频繁切换。缺乏任务优先级管理能力。',
+    rule: (s) => s.attention < 30 && s.start < 40 },
+  'C1': { name: '自主感剥夺型对抗', summary: '孩子用对抗争取自主权。你越催，他越慢，因为"快写"意味着"你赢了"。',
+    rule: (s) => s.motivation < 30 && s.parent > 70 && s.emotion < 40 },
+  'C2': { name: '习得性无助型', summary: '长期失败，认为自己做不到。需要重建"我能行"的体验。',
+    rule: (s) => s.motivation < 30 && s.emotion < 30 && s.start < 40 },
+  'C3': { name: '情绪崩溃型', summary: '一遇困难就情绪失控。需要先处理情绪，再处理任务。',
+    rule: (s) => s.emotion < 20 && (s.start < 40 || s.attention < 40 || s.motivation < 40) },
+  'D1': { name: '全面瘫痪型', summary: '多维度严重缺失，需要系统性重建。这不是单一问题，而是整体自驱力系统崩溃。',
+    rule: (s) => [s.start, s.attention, s.motivation, s.emotion].filter(x => x < 30).length >= 3 },
+  'D2': { name: '家长过度干预型', summary: '家长代劳过多，孩子能力退化。问题不在孩子，在家长的"过度保护"。',
+    rule: (s) => s.parent > 80 && s.start < 50 && s.motivation < 50 },
+  'D3': { name: '高能力低动机型', summary: '有能力但不愿做。需要找到意义感，而非提高能力。',
+    rule: (s) => s.start > 60 && s.attention > 60 && s.motivation < 30 }
+};
+
+const solutionTemplates = {
+  'A1': {
+    expert: {
+      essence: '孩子表现出典型的"完美主义拖延"（Perfectionism Procrastination）。其认知模式是："如果我不能一次性做好，那不如不开始。"',
+      cause: '这种思维模式导致前额叶皮层的决策功能被杏仁核的恐惧反应抑制。家长需要帮助孩子建立"完成比完美更重要"的认知框架。',
+      direction: '通过降低初始任务的难度门槛，重建孩子的启动信心。先完成，再修改。'
+    },
+    analogy: {
+      story: '"你的大脑里有一个'完美小警察'，它说'必须做到最好才能开始'。但这个警察太严格了，导致你都不敢动笔。我们要告诉它：'先写完，再改好，草稿本来就是用来改错的。'"',
+      task: '"画画的时候，画家会先画草稿，草稿就是用来乱画的。作业也一样，第一遍就是草稿，不用怕错。"',
+      encourage: '"你今天写了5个错别字，但比昨天多写了10行！草稿的价值就是写出来，不是写对。"'
+    },
+    action: {
+      steps: [
+        '作业前：和孩子一起把作业分成"草稿→修改→定稿"三步，明确告诉孩子"第一步只要写出来，对错不重要"',
+        '作业中：设定15分钟计时器，告诉孩子"15分钟内只写草稿，不擦不改，时间到了再回头看"',
+        '作业后：和孩子一起圈出草稿中"写得好的地方"（至少3处），强化"完成就有价值"的认知'
+      ],
+      parent: [
+        '❌ 不要说："你怎么还没开始？"',
+        '✅ 改说："我们先写第一个字，写完再看好不好"',
+        '❌ 不要在孩子写的时候纠正错别字',
+        '✅ 等全部写完后再统一修改'
+      ],
+      timeline: [
+        '第1-3天：孩子可能仍然犹豫，但开始时间会缩短',
+        '第1周：孩子能接受"先写草稿"的模式',
+        '第2-4周：启动时间明显缩短，对错误的焦虑降低'
+      ]
+    }
+  },
+  'A2': {
+    expert: {
+      essence: '孩子表现出"任务过载瘫痪"（Task Overload Paralysis）。面对大量任务时，前额叶皮层的决策系统因选项过多而"宕机"，无法启动任何一项。',
+      cause: '作业量超出孩子的认知负荷上限，加上缺乏任务拆解能力，导致"看着就烦"的逃避反应。这不是懒，是大脑在保护自己不崩溃。',
+      direction: '从"全部完成"转向"先完成最小单元"，用"微启动"重建掌控感。一次只看一块石头，不看整座山。'
+    },
+    analogy: {
+      story: '"你面前有一大堆积木，要搭一座城堡。但你看着这么多积木，不知道先拿哪一块，干脆坐在地上不动了。我们要做的不是让你搭完城堡，而是先拿起第一块积木。"',
+      task: '"把作业变成一颗一颗的糖，一次只吃一颗。吃完第一颗，你会发现第二颗没那么可怕了。"',
+      encourage: '"今天你只完成了3道题，但这3道题是你自己挑的。城堡的第一块砖已经搭好了！"'
+    },
+    action: {
+      steps: [
+        '作业前：和孩子一起把今晚所有作业写在便利贴上，然后只留一科在桌上，其他全部收进书包，告诉孩子"今晚我们只攻这一科"',
+        '作业中：把这一科再拆成3个小块（如"只做前5道选择题"），每完成一块就撕掉一张便利贴，让孩子看到"山在变小"',
+        '作业后：如果孩子完成了最小单元，立刻停止，剩余作业明天再说。庆祝"今天攻下了一座小山头"'
+      ],
+      parent: [
+        '❌ 不要说："作业这么多还不快点写？"',
+        '✅ 改说："今晚作业确实多，我们先挑一科最简单的开始"',
+        '❌ 不要要求孩子全部做完',
+        '✅ 允许"战略性放弃"部分作业，先建立"能完成"的信心'
+      ],
+      timeline: [
+        '第1-3天：孩子可能只完成了一小部分，但焦虑感明显下降',
+        '第1周：孩子开始主动要求"先写数学，因为最简单"',
+        '第2-4周：孩子能自己拆解任务，面对大量作业不再 paralysis'
+      ]
+    }
+  },
+  'A3': {
+    expert: {
+      essence: '孩子表现出"依赖启动型"行为模式。长期的外部催促已替代了内在的启动机制，形成了"条件反射式"的依赖——没有外部刺激，大脑就不会发出"开始"的指令。',
+      cause: '家长长期的高频催促导致孩子的前额叶皮层"外包"了启动功能。孩子的神经系统已经适应了"被推动"的模式，自主启动的神经回路未被激活。',
+      direction: '逐步"断奶"，从高频催促→低频提醒→零提醒。用"自然后果"替代"人为催促"，让孩子的神经系统重新学习自主启动。'
+    },
+    analogy: {
+      story: '"你一直坐在一辆电动车上，爸爸妈妈负责踩油门。现在你要学会自己骑自行车了。一开始可能会歪歪扭扭，甚至会摔跤，但你的腿会慢慢长出肌肉。"',
+      task: '"今天我们不踩油门了，但我们在旁边扶着车。你试着蹬一下，哪怕只蹬一圈。"',
+      encourage: '"今天你自己蹬了3圈，虽然慢，但这是你自己的力量。电动车不会永远跟着你。"'
+    },
+    action: {
+      steps: [
+        '作业前：告诉孩子"今晚我只提醒一次，7点开始。7点到了我会说一次，之后不再催。写不完就写不完，你自己承担后果"',
+        '作业中：设定一个"沉默期"（如30分钟），家长完全不进房间、不送水果、不问进度。让孩子体验"没人推"的感觉',
+        '作业后：如果孩子没完成，不责骂，只说"明天你打算几点开始？需要我提醒吗？"把决策权交还给孩子'
+      ],
+      parent: [
+        '❌ 不要反复催："快点写！""还不开始？"',
+        '✅ 只提醒一次，然后彻底闭嘴',
+        '❌ 不要代劳：帮孩子整理书包、准备文具',
+        '✅ 让孩子自己承担"没准备"的后果（如找不到橡皮、浪费时间）'
+      ],
+      timeline: [
+        '第1-3天：孩子可能完全不开始，或开始时间大幅延后。家长必须忍住不催',
+        '第1周：孩子开始意识到"真的没人催了"，出现试探性自主启动',
+        '第2-4周：孩子逐渐形成自己的启动节奏，催促需求减少'
+      ]
+    }
+  },
+  'B1': {
+    expert: {
+      essence: '孩子表现出"持续性注意力不足"（Sustained Attention Deficit），但任务启动能力完好。这通常与前额叶皮层的抑制控制功能发育不成熟有关——孩子难以过滤无关刺激。',
+      cause: '干预重点不是"让孩子更专注"，而是"减少环境刺激源"，通过外部结构化支持，逐步训练内在的抑制控制能力。',
+      direction: '从"外部驱动"转向"脚手架支持"（Scaffolding），逐步撤除外部辅助，建立孩子的自我监控机制。'
+    },
+    analogy: {
+      story: '"你的注意力像一个小猫，看到什么有趣的东西都要跑过去看。我们要给这只小猫画一个圈，告诉它'现在只能在这个圈里玩'。圈外面的东西，我们先把它们藏起来。"',
+      task: '"作业就像一座大山，看着害怕。我们把它切成一块块小石头，一次只搬一块。"',
+      encourage: '"你今天让小猫在圈里待了15分钟，比昨天多了5分钟！它在慢慢学会听话。"'
+    },
+    action: {
+      steps: [
+        '环境清理：写作业前，和孩子一起把桌上所有非必需品收走（只留当前作业需要的文具），橡皮只留1块，铅笔提前削好2支',
+        '单任务规则：一次只放一科作业在桌上，做完一科再换下一科，其他科目收进书包',
+        '番茄钟+记录：用25分钟番茄钟，每完成一个番茄钟，孩子在纸上画一个"✓"，积累5个可以兑换一个小奖励'
+      ],
+      parent: [
+        '❌ 不要在孩子写作业时送水果、问问题、进房间',
+        '✅ 提前准备好一切，写作业期间"物理隔离"',
+        '❌ 不要说："你怎么又走神了？"',
+        '✅ 改说："番茄钟响了，我们看看完成了多少"'
+      ],
+      timeline: [
+        '第1-3天：环境清理后干扰减少，但孩子可能不习惯',
+        '第1周：孩子开始适应"单任务"模式，番茄钟完成率提升',
+        '第2-4周：孩子能主动要求"先把桌上清干净再写"'
+      ]
+    }
+  },
+  'B2': {
+    expert: {
+      essence: '孩子表现出"任务厌倦型注意力分散"。注意力问题的根源不是能力不足，而是内在动机枯竭——对任务本身缺乏兴趣或意义感，导致大脑无法分配认知资源。',
+      cause: '长期的外部驱动（奖励、惩罚、催促）削弱了任务的内在价值感。孩子将作业视为"被迫完成的任务"而非"有意义的学习"，注意力自然无法集中。',
+      direction: '从"完成任务"转向"找到意义"，通过任务重构（如把作业变成游戏、挑战、创作）重新激活内在动机，注意力会自然回归。'
+    },
+    analogy: {
+      story: '"你正在吃一盘没有味道的青菜，有人逼你吃完。你当然会东张西望，因为吃这盘菜太无聊了。我们要给这盘菜加点调料——比如比赛谁先吃完，或者把青菜摆成你喜欢的形状。"',
+      task: '"作业就像跑步，如果一直跑直线，你会累。我们把它变成障碍赛——每完成一道题，就像跨过一个障碍，有欢呼、有积分。"',
+      encourage: '"你今天把数学题变成了'闯关游戏'，虽然还是那些题，但你主动完成了10道！调料起作用了。"'
+    },
+    action: {
+      steps: [
+        '任务游戏化：和孩子一起给作业设计"关卡"（如"前5道题是新手村，后5道是Boss战"），完成后在纸上画进度条',
+        '选择权赋予：让孩子决定做题顺序（"先写喜欢的科目"或"先写最难的科目"），增加掌控感',
+        '即时反馈：每完成一小部分，家长立刻给予具体认可（"这3道题全对，你的思路很清晰"），而非笼统表扬'
+      ],
+      parent: [
+        '❌ 不要说："快点写完就能玩了"（强化"作业是痛苦的"）',
+        '✅ 改说："这道题很有意思，你看这个条件是不是在设陷阱？"',
+        '❌ 不要用物质奖励交换作业完成',
+        '✅ 用"成就体验"替代奖励："你今天提前10分钟完成，多出来的时间你自由支配"'
+      ],
+      timeline: [
+        '第1-3天：孩子可能对"游戏化"感到新鲜，完成意愿提升',
+        '第1周：孩子开始主动设计自己的"关卡"，对作业的态度从抵触转为中性',
+        '第2-4周：孩子能在无游戏化的情况下保持基本注意力，内在动机初步恢复'
+      ]
+    }
+  },
+  'B3': {
+    expert: {
+      essence: '孩子表现出"多任务切换型注意力分散"。前额叶皮层同时处理多个任务时，认知资源被不断切换消耗，导致每个任务都完不成。这不是高效，是"伪忙碌"。',
+      cause: '孩子缺乏任务优先级管理能力，加上对"完成感"的焦虑（想同时推进多个任务来"赶进度"），导致频繁切换。每次切换都有"认知残留"，效率反而更低。',
+      direction: '训练"单线程工作模式"，用外部工具（清单、计时器）强制锁定当前任务，逐步建立"完成一个再下一个"的神经习惯。'
+    },
+    analogy: {
+      story: '"你同时在煮三锅汤，每锅都只煮了一半就换下一锅。结果三锅汤都没熟，你还累得半死。我们要学会：先把一锅汤煮好，再换下一锅。"',
+      task: '"你的大脑像一台电脑，开太多窗口会卡死。我们要学会只开一个窗口，做完再关。"',
+      encourage: '"今天你只用了一个窗口写数学，虽然语文还没开始，但数学全做完了！一锅汤煮好了，真香。"'
+    },
+    action: {
+      steps: [
+        '任务清单法：和孩子一起把今晚所有作业写在一张纸上，按"最难→最简单"排序，然后只露出第一项，其他折起来',
+        '强制单任务：用物理方式阻止切换——把其他科目的书本收进另一个房间，当前科目只留一页在桌上',
+        '完成仪式：每完成一项，让孩子大声说"XX完成！"并在清单上打勾，用仪式感强化"单任务完成"的快感'
+      ],
+      parent: [
+        '❌ 不要同时布置多个任务："先写数学，再背英语，然后练钢琴"',
+        '✅ 一次只说一个任务："现在只做数学，其他的之后再说"',
+        '❌ 不要在孩子切换时默认允许',
+        '✅ 温和但坚定地拉回："我看到你想换语文了，但数学还有2道题，我们先做完这2道"'
+      ],
+      timeline: [
+        '第1-3天：孩子可能频繁要求切换，家长需要温和坚持',
+        '第1周：孩子开始适应"完成一项再打勾"的节奏，切换频率下降',
+        '第2-4周：孩子能自主使用清单法，单任务模式初步建立'
+      ]
+    }
+  },
+  'C1': {
+    expert: {
+      essence: '孩子表现出"自主感剥夺后的对抗反应"（Reactance）。根据自我决定理论，自主权是人类的基本心理需求。',
+      cause: '当家长过度控制（频繁催促、全程监督、代做决定），孩子的内在动机被系统性破坏，转而通过"拖延""对抗"等行为重新争取控制感。',
+      direction: '干预的核心是"放权"——把决策权还给孩子，哪怕他做得慢、做得错。'
+    },
+    analogy: {
+      story: '"你觉得爸爸妈妈像一个'遥控器'，总是按你的按钮。你想按自己的按钮，但遥控器不让你碰。所以你想了一个办法：让遥控器失效——你越催，我越慢。"',
+      task: '"我们可以换一个方式：遥控器给你，你来按自己的按钮，爸爸妈妈只站在旁边看着。"',
+      encourage: '"今天你决定先写数学，这是你第一次自己安排顺序！遥控器在你手里了。"'
+    },
+    action: {
+      steps: [
+        '给选择权：今晚作业顺序由孩子自己决定（数学→语文→英语，或反过来），家长只提供选项，不替决定',
+        '设定边界不介入：约定"妈妈在客厅，有问题可以来找我，但我不会进房间看"，设定一个明确的时间节点（如9点）检查完成情况',
+        '后果自然发生：如果孩子选择先玩后写，导致晚睡，让孩子体验自然后果（第二天早起困难），家长不额外惩罚'
+      ],
+      parent: [
+        '❌ 不要全程坐在旁边盯着',
+        '✅ 约定检查时间点，中间不介入',
+        '❌ 不要说："快点写！"',
+        '✅ 改说："你打算几点开始？需要我提醒吗？"'
+      ],
+      timeline: [
+        '第1-3天：孩子可能试探边界（故意写得更慢），家长需要忍住不介入',
+        '第1周：孩子开始体验到"自主权"，对抗行为减少',
+        '第2-4周：孩子能自主安排作业顺序，启动时间改善'
+      ]
+    }
+  },
+  'C2': {
+    expert: {
+      essence: '孩子表现出"习得性无助"（Learned Helplessness）。长期的失败体验导致孩子形成了"我做不到"的固定型思维模式，即使有能力也不尝试，因为尝试=失败=痛苦。',
+      cause: '反复的挫败（作业太难、家长批评、老师否定）让孩子的大脑建立了"努力也没用"的神经回路。这不是懒，是大脑在避免再次受伤。',
+      direction: '重建"我能行"的体验，从"不可能失败"的任务开始，逐步升级难度。重点不是提高能力，而是修复"尝试"的勇气。'
+    },
+    analogy: {
+      story: '"你以前爬过一座很高的山，摔了很多次，现在看到任何山都害怕。我们要做的不是让你再爬那座大山，而是先让你爬一个小土坡——小到不可能摔倒。让你知道：原来我还是能爬的。"',
+      task: '"今天我们不爬山，我们走平地。只要走完10步，就算胜利。你会发现：走平地，我是可以的。"',
+      encourage: '"今天你走了10步平地，一步都没摔！你的腿还在，你的力量还在。明天我们试试小土坡？"'
+    },
+    action: {
+      steps: [
+        '不可能失败任务：今天只布置孩子"肯定能完成"的任务（如只写3行字、只读1页书），完成后立刻庆祝，强调"你看，你能做到"',
+        '错误重构：当孩子做错时，不说"错了"，而说"这个错误很有意思，它告诉我们下一步该怎么调整"，把错误变成学习机会',
+        '能力可视化：做一个"我能行"记录表，每天记录一件"我做到了"的小事（哪怕只是"今天自己整理了书包"），积累成功体验'
+      ],
+      parent: [
+        '❌ 不要说："你怎么这么笨？这么简单都不会？"',
+        '✅ 改说："这道题确实有难度，但我们找找看有没有你会的部分"',
+        '❌ 不要在孩子失败时叹气、摇头、表现出失望',
+        '✅ 孩子失败时，第一时间说："我看到你尝试了，这比结果更重要"'
+      ],
+      timeline: [
+        '第1-3天：孩子可能对"简单任务"感到疑惑，但完成后的轻松感会让他惊讶',
+        '第1周：孩子开始接受"我能行"的说法，愿意尝试稍难一点的任务',
+        '第2-4周：孩子的"尝试意愿"明显提升，面对困难时不再第一时间放弃'
+      ]
+    }
+  },
+  'C3': {
+    expert: {
+      essence: '孩子表现出"情绪崩溃型"反应。面对困难或挫折时，杏仁核过度激活，前额叶皮层被"情绪洪水"淹没，无法执行任何认知任务。此时讲道理完全无效。',
+      cause: '孩子的情绪调节系统尚未发育成熟，加上长期的高压环境（催促、批评、高期望），导致情绪阈值极低。一遇困难就触发"战斗或逃跑"反应。',
+      direction: '先处理情绪，再处理任务。用"情绪急救"（共情、命名情绪、身体安抚）让孩子从"情绪脑"回到"理智脑"，然后再谈作业。'
+    },
+    analogy: {
+      story: '"你的大脑现在像一台着火的电脑，屏幕里全是火焰，什么都看不见。我们要做的不是让你继续工作，而是先灭火。等火灭了，屏幕清楚了，我们再工作。"',
+      task: '"现在我们不写作业，我们先灭火。深呼吸3次，像吹蜡烛一样慢慢吹气。火小了，我们再看看那道题。"',
+      encourage: '"今天你虽然哭了，但你在哭完之后自己深呼吸了3次，火灭得比上次快。你在学习灭火了。"'
+    },
+    action: {
+      steps: [
+        '情绪急救第一步：孩子崩溃时，家长不说"别哭了""这有什么好哭的"，而是说"我看到你很沮丧/生气/害怕，这道题让你很难受"——命名情绪能降低杏仁核活跃度',
+        '身体安抚：带孩子做3次深呼吸（吸气4秒→屏息4秒→呼气6秒），或让孩子喝一口温水、洗把脸，用身体感觉打断情绪循环',
+        '任务降级：情绪平复后，把当前任务降到"不可能失败"的难度（如"我们先读一遍题目，不急着做"），让孩子重新体验"我能行"'
+      ],
+      parent: [
+        '❌ 不要说："别哭了！""这有什么好哭的？""你再哭我就不管你了！"',
+        '✅ 改说："我看到你很沮丧，这道题确实很难。我们先不做了，深呼吸几次"',
+        '❌ 不要在孩子情绪崩溃时继续讲题、催促',
+        '✅ 情绪优先于任务：今天作业做不完也没关系，先修复情绪'
+      ],
+      timeline: [
+        '第1-3天：孩子崩溃时，家长用新方法安抚，崩溃持续时间可能从20分钟缩短到10分钟',
+        '第1周：孩子开始学会自己深呼吸，崩溃频率降低',
+        '第2-4周：孩子能在崩溃边缘自我调节，或主动求助"我需要冷静一下"'
+      ]
+    }
+  },
+  'D1': {
+    expert: {
+      essence: '孩子表现出多维度严重缺失，这是整体自驱力系统的崩溃，而非单一问题。',
+      cause: '长期的外部压力、过度干预、任务过载和缺乏正向反馈，导致孩子的内在动机系统、注意力系统和情绪调节系统同时受损。',
+      direction: '需要系统性重建，从最简单的任务开始，逐步恢复信心。不能急于求成，先修复关系，再修复能力。'
+    },
+    analogy: {
+      story: '"你的自驱力小火车坏了，不是轮子掉了，是发动机、方向盘、刹车都出了问题。我们不能只修轮子，要先把火车停下来，一块一块修好。"',
+      task: '"今天我们不写作业，我们先修火车。第一步：把作业变成一颗糖那么大，小到不可能失败。"',
+      encourage: '"今天你只写了3行字，但这3行是'不可能失败'的3行。火车开始动了，哪怕只动了一点点。"'
+    },
+    action: {
+      steps: [
+        '极简启动：今天只布置"不可能失败"的任务（如只写3行字、只读1页书），完成后立即庆祝',
+        '关系修复：连续3天不谈作业，只做孩子喜欢的事（一起打球、看电影），重建亲子连接',
+        '逐步加码：从第4天开始，每天只增加一点点任务量，但确保孩子能完成并获得认可'
+      ],
+      parent: [
+        '❌ 不要说："你怎么什么都不做？"',
+        '✅ 改说："今天我们先不写作业，你想做什么？"',
+        '❌ 不要增加额外任务（补习班、额外练习）',
+        '✅ 只保留学校最低要求，其他全部暂停'
+      ],
+      timeline: [
+        '第1-3天：关系修复期，不碰作业，只做连接',
+        '第1-2周：极简任务期，每天只完成"不可能失败"的小任务',
+        '第3-4周：逐步加码期，孩子开始恢复基本启动能力'
+      ]
+    }
+  },
+  'D2': {
+    expert: {
+      essence: '孩子的问题本质是"家长过度干预型"能力退化。家长的代劳、催促、全程监控，导致孩子的自驱力系统长期"闲置"，神经回路萎缩。问题不在孩子，在家长的"过度保护"。',
+      cause: '家长的"好心"（怕孩子做错、怕孩子受苦、想让孩子高效）实际上剥夺了孩子"试错-学习-成长"的机会。孩子从未体验过"自己搞定"的成就感，自然无法自主。',
+      direction: '家长需要"战略性撤退"，从"全程代驾"转为"副驾驶"，再到"后排乘客"。孩子的能力只有在"被迫自己开"时才会生长。'
+    },
+    analogy: {
+      story: '"你一直背着孩子走路，孩子从未自己走过。现在你说'你怎么不会走路？'——因为他从未有机会练习。我们要做的不是教孩子走路，而是放下他，哪怕他会摔跤。"',
+      task: '"今天我们不背你了，我们牵着你走10步。明天牵5步。后天你自己走。摔跤了，我们扶你起来，但不背你。"',
+      encourage: '"今天你自己走了10步，虽然慢，但每一步都是你自己的。你比昨天更强了。"'
+    },
+    action: {
+      steps: [
+        '家长撤退计划：列出你目前替孩子做的所有事（叫起床、整理书包、检查作业、提醒时间），然后每天撤掉一项，让孩子自己承担',
+        '自然后果法：孩子忘带作业→让他被老师说；孩子迟到→让他自己跟老师解释；孩子没写完→让他自己面对。家长不救场、不解释、不代劳',
+        '能力授权：给孩子一个"任务清单"和"自主权"——"今晚这3件事必须完成，但顺序和方式你自己定。我只在9点检查一次结果"'
+      ],
+      parent: [
+        '❌ 不要叫孩子起床、提醒时间、检查书包',
+        '✅ 买一个闹钟，让孩子自己定；准备一个清单，让孩子自己核对',
+        '❌ 不要在孩子遇到困难时立刻帮忙',
+        '✅ 等5分钟再问："你需要帮助吗？"给孩子5分钟自己尝试的时间',
+        '❌ 不要在孩子失败时批评或补救',
+        '✅ 说："这次没做好，下次你打算怎么调整？"'
+      ],
+      timeline: [
+        '第1-3天：孩子可能出现混乱（忘带东西、迟到、作业漏做），家长必须忍住不救场',
+        '第1周：孩子开始意识到"真的没人帮我了"，出现自主行为的萌芽',
+        '第2-4周：孩子逐渐形成自己的系统（如睡前自己整理书包、定闹钟），能力开始恢复'
+      ]
+    }
+  },
+  'D3': {
+    expert: {
+      essence: '孩子表现出"高能力低动机型"特征。任务启动和注意力都没问题，但内在动机严重缺失——"会做但不想做"。这不是能力问题，是意义感问题。',
+      cause: '孩子可能觉得任务太简单（无聊）、太重复（无挑战）、或看不到学习与未来的关联（无意义）。长期的外部驱动（分数、排名、奖励）让孩子把学习视为"交易"而非"成长"。',
+      direction: '从"完成任务"转向"找到意义"，通过目标连接（把作业和孩子的兴趣/梦想挂钩）、挑战升级（增加难度或创意元素）、自主项目（让孩子主导一部分学习内容）来激活内在动机。'
+    },
+    analogy: {
+      story: '"你是一台性能很好的跑车，但油箱里加的是水不是油。发动机没问题，但燃料不对。我们要找到你真正想要的燃料——也许是速度感、也许是赛道、也许是赢得比赛。"',
+      task: '"这些作业就像练习赛，很无聊。但如果你想参加真正的比赛（比如数学竞赛、编程比赛），练习赛是必经之路。我们能不能把练习赛变得有趣一点？"',
+      encourage: '"你这道题用了3种解法，虽然作业只要求1种，但你在挑战自己。这就是赛车的速度感！"'
+    },
+    action: {
+      steps: [
+        '意义连接：和孩子一起找到作业与兴趣的关联点。如喜欢游戏的孩子→"这道题是游戏设计中的数学原理"；喜欢画画的孩子→"几何是构图的基础"',
+        '挑战升级：允许孩子在基础作业之外，增加一个"自选挑战"（如用不同方法解题、给题目编一个故事），满足能力过剩带来的无聊感',
+        '目标可视化：做一个"梦想进度条"，把作业和孩子的长期目标（如考上某所学校、学会某项技能）连接，让孩子看到"今天的作业=未来的梦想"'
+      ],
+      parent: [
+        '❌ 不要说："你这么聪明，怎么就不愿意学？"',
+        '✅ 改说："这道题对你太简单了，要不要试试更难的方式？"',
+        '❌ 不要用分数、排名驱动',
+        '✅ 用"成长感"驱动："你比上个月多会了一种解题方法"',
+        '❌ 不要替孩子决定学习目标',
+        '✅ 问孩子："你想用数学做什么？玩游戏？做设计？我们朝着那个方向学"'
+      ],
+      timeline: [
+        '第1-3天：孩子可能对"意义连接"感到新鲜，愿意尝试',
+        '第1周：孩子开始主动提出自己的"挑战"或"关联方式"',
+        '第2-4周：孩子能在常规作业中找到自己的"意义点"，动机明显提升'
+      ]
+    }
+  }
+};
+const defaultTemplate = solutionTemplates['B1'];
+
+let currentScores = {};
+let currentType = '';
+let selectedMethods = [];
+let matchedKeywords = [];
+
+document.querySelectorAll('.tag-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    this.classList.toggle('active');
+    const val = this.dataset.val;
+    if (this.classList.contains('active')) {
+      if (!selectedMethods.includes(val)) selectedMethods.push(val);
+    } else {
+      selectedMethods = selectedMethods.filter(m => m !== val);
+    }
+  });
+});
+
+document.getElementById('scene-desc').addEventListener('input', function() {
+  document.getElementById('char-count').textContent = this.value.length + '字';
+});
+
+function fillExample(n) {
+  const examples = {
+    1: { age: '9-11', duration: 'short', scene: '昨晚数学作业，孩子坐在桌前2小时，只写了3道题。他一直擦了重写，说"怕写错""想好了再写"。我催了几次，他更慢了。最后我吼了他，他才哭着写完。', methods: ['催','吼'] },
+    2: { age: '9-11', duration: 'long', scene: '孩子写作业时总是玩橡皮、削铅笔，一会儿去厕所，一会儿喝水。我坐在旁边盯着，但他还是走神。2小时作业能写4小时。说他也没用，下次还是这样。', methods: ['陪写','催'] },
+    3: { age: '12-14', duration: 'long', scene: '我一催他写作业，他就说"你管我""我就不写"。我把手机收了，他就摔门。上周月考成绩下滑，我想跟他谈，他说"别烦我"。现在完全对抗状态。', methods: ['催','吼'] },
+    4: { age: '9-11', duration: 'always', scene: '孩子什么都不想做。作业不写，书不看，补习班也不去。整天玩手机。我说什么都不听，要么装没听见，要么发脾气。我已经不知道该怎么办了。', methods: ['吼','不管'] }
+  };
+  const ex = examples[n];
+  document.getElementById('child-age').value = ex.age;
+  document.getElementById('duration').value = ex.duration;
+  document.getElementById('scene-desc').value = ex.scene;
+  document.getElementById('char-count').textContent = ex.scene.length + '字';
+
+  document.querySelectorAll('.tag-btn').forEach(btn => btn.classList.remove('active'));
+  selectedMethods = [];
+  ex.methods.forEach(m => {
+    const btn = document.querySelector('.tag-btn[data-val="' + m + '"]');
+    if (btn) { btn.classList.add('active'); selectedMethods.push(m); }
+  });
+}
+
+function runDiagnosis() {
+  const age = document.getElementById('child-age').value;
+  const duration = document.getElementById('duration').value;
+  const scene = document.getElementById('scene-desc').value.trim();
+
+  if (!age || !duration || !scene) {
+    alert('请填写完整信息：孩子年龄、持续时间和具体场景');
+    return;
+  }
+
+  goPanel(2);
+
+  document.getElementById('diagnosis-loading').style.display = 'block';
+  document.getElementById('diagnosis-result').style.display = 'none';
+  document.getElementById('btn-to-solution').style.display = 'none';
+
+  setTimeout(() => {
+    const result = calculateDiagnosis(scene);
+    currentScores = result.scores;
+    currentType = result.type;
+    matchedKeywords = result.keywords;
+
+    renderDiagnosis(result);
+
+    document.getElementById('diagnosis-loading').style.display = 'none';
+    document.getElementById('diagnosis-result').style.display = 'block';
+    document.getElementById('btn-to-solution').style.display = 'block';
+    document.getElementById('btn-to-solution').classList.add('fade-in');
+  }, 1500);
+}
+
+function calculateDiagnosis(text) {
+  const scores = { start: 50, attention: 50, motivation: 50, emotion: 50, parent: 50 };
+  const keywords = [];
+
+  for (const [dim, data] of Object.entries(keywordDB)) {
+    for (const word of data.pos) {
+      if (text.includes(word)) {
+        scores[dim] += data.weights.pos;
+        keywords.push({ word, dim, type: 'pos', weight: data.weights.pos });
+      }
+    }
+    for (const word of data.neg) {
+      if (text.includes(word)) {
+        scores[dim] += data.weights.neg;
+        keywords.push({ word, dim, type: 'neg', weight: data.weights.neg });
+      }
+    }
+  }
+
+  for (const dim in scores) {
+    scores[dim] = Math.max(0, Math.min(100, scores[dim]));
+  }
+
+  scores.parent = 100 - scores.parent;
+
+  let type = '';
+  const priority = ['D1','C3','D2','C1','C2','B1','B2','B3','A1','A2','A3','D3'];
+  for (const t of priority) {
+    if (problemTypes[t].rule(scores)) {
+      type = t;
+      break;
+    }
+  }
+  if (!type) type = 'B1';
+
+  return { scores, type, keywords };
+}
+
+function renderDiagnosis(result) {
+  const type = problemTypes[result.type];
+  document.getElementById('result-code').textContent = result.type;
+  document.getElementById('result-name').textContent = type.name;
+  document.getElementById('result-summary').textContent = type.summary;
+
+  const dims = ['start','attention','motivation','emotion','parent'];
+  const levels = [
+    { max: 20, label: '严重缺失', color: '#ff4d4f' },
+    { max: 40, label: '明显不足', color: '#ff7875' },
+    { max: 60, label: '中等', color: '#faad14' },
+    { max: 80, label: '良好', color: '#52c41a' },
+    { max: 100, label: '优秀', color: '#52c41a' }
+  ];
+
+  dims.forEach((dim, i) => {
+    const score = result.scores[dim];
+    const level = levels.find(l => score <= l.max);
+    document.getElementById('score-' + dim).textContent = score;
+    document.getElementById('level-' + dim).textContent = level.label;
+    document.getElementById('level-' + dim).style.color = level.color;
+    document.getElementById('bar-' + dim).style.width = score + '%';
+    document.getElementById('bar-' + dim).style.background = level.color;
+
+    const card = document.getElementById('dim-' + dim);
+    card.classList.remove('highlight');
+    if (score <= 30) card.classList.add('highlight');
+  });
+
+  const kwContainer = document.getElementById('keyword-tags');
+  kwContainer.innerHTML = '';
+  result.keywords.slice(0, 12).forEach(kw => {
+    const tag = document.createElement('span');
+    tag.className = 'keyword-tag ' + (kw.type === 'pos' ? 'pos' : 'neg');
+    tag.textContent = kw.word + (kw.weight > 0 ? '+' : '') + kw.weight;
+    kwContainer.appendChild(tag);
+  });
+
+  const priorityText = generatePriority(result.scores, result.type);
+  document.getElementById('priority-list').innerHTML = priorityText;
+}
+
+function generatePriority(scores, type) {
+  const dims = [
+    { name: '注意力分散问题', score: scores.attention, action: '环境清理 + 单任务训练' },
+    { name: '任务启动困难', score: scores.start, action: '任务拆解 + 降低门槛' },
+    { name: '内在动机不足', score: scores.motivation, action: '自主权归还 + 意义感建立' },
+    { name: '情绪调节问题', score: scores.emotion, action: '情绪先处理，再处理任务' },
+    { name: '家长过度干预', score: scores.parent, action: '减少介入，建立边界' }
+  ];
+
+  dims.sort((a, b) => a.score - b.score);
+
+  let html = '';
+  let priority = 1;
+  dims.forEach(d => {
+    if (d.score < 60) {
+      html += priority + '. <strong>' + d.name + '</strong> — ' + d.action + '<br>';
+      priority++;
+    }
+  });
+
+  if (priority === 1) {
+    html = '1. <strong>维持现有优势</strong> — 孩子自驱力基础良好，重点在巩固提升<br>2. <strong>预防性干预</strong> — 关注潜在风险点，提前建立好习惯';
+  }
+
+  return html;
+}
+
+function switchVer(ver) {
+  document.querySelectorAll('.ver-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('.ver-tab[data-ver="' + ver + '"]').classList.add('active');
+  document.querySelectorAll('.ver-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('ver-' + ver).classList.add('active');
+}
+
+function voteVer(ver) {
+  document.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelector('.vote-btn.v-' + ver).classList.add('selected');
+}
+
+function goPanel(n) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + n).classList.add('active');
+
+  document.querySelectorAll('.step-item').forEach((item, idx) => {
+    item.classList.remove('active', 'completed');
+    const stepNum = idx + 1;
+    if (stepNum === n) {
+      item.classList.add('active');
+    } else if (stepNum < n) {
+      item.classList.add('completed');
+      item.querySelector('span').textContent = '✓';
+    } else {
+      item.querySelector('span').textContent = stepNum;
+    }
+  });
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  if (n === 3) renderSolution();
+  if (n === 4) renderArchive();
+}
+
+function renderSolution() {
+  const template = solutionTemplates[currentType] || defaultTemplate;
+
+  document.getElementById('expert-essence').textContent = template.expert.essence;
+  document.getElementById('expert-cause').textContent = template.expert.cause;
+  document.getElementById('expert-direction').textContent = template.expert.direction;
+
+  document.getElementById('analogy-story').textContent = template.analogy.story;
+  document.getElementById('analogy-task').textContent = template.analogy.task;
+  document.getElementById('analogy-encourage').textContent = template.analogy.encourage;
+
+  const stepsContainer = document.getElementById('action-steps');
+  stepsContainer.innerHTML = '';
+  template.action.steps.forEach((step, i) => {
+    const div = document.createElement('div');
+    div.className = 'action-step';
+    div.innerHTML = '<div class="action-num">' + (i+1) + '</div><div class="action-text">' + step + '</div>';
+    stepsContainer.appendChild(div);
+  });
+
+  const parentContainer = document.getElementById('action-parent');
+  parentContainer.innerHTML = '';
+  template.action.parent.forEach(p => {
+    const div = document.createElement('div');
+    div.style.marginBottom = '8px';
+    div.textContent = p;
+    parentContainer.appendChild(div);
+  });
+
+  const timelineContainer = document.getElementById('action-timeline');
+  timelineContainer.innerHTML = '';
+  template.action.timeline.forEach(t => {
+    const div = document.createElement('div');
+    div.style.marginBottom = '6px';
+    div.textContent = t;
+    timelineContainer.appendChild(div);
+  });
+
+  document.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
+}
+
+function renderArchive() {
+  const scene = document.getElementById('scene-desc').value;
+  const type = problemTypes[currentType];
+
+  document.getElementById('archive-scene').textContent = scene;
+  document.getElementById('archive-core').textContent = type.name;
+  document.getElementById('archive-direction').textContent = type.summary;
+  document.getElementById('archive-badge').textContent = currentType + ' ' + type.name;
+
+  const radar = document.getElementById('archive-radar');
+  radar.innerHTML = '';
+  const dims = ['start','attention','motivation','emotion','parent'];
+  const dimNames = ['任务启动','持续注意力','内在动机','情绪调节','家长干预'];
+  const levels = [
+    { max: 20, label: '严重缺失', color: '#ff4d4f' },
+    { max: 40, label: '明显不足', color: '#ff7875' },
+    { max: 60, label: '中等', color: '#faad14' },
+    { max: 80, label: '良好', color: '#52c41a' },
+    { max: 100, label: '优秀', color: '#52c41a' }
+  ];
+
+  dims.forEach((dim, i) => {
+    const score = currentScores[dim];
+    const level = levels.find(l => score <= l.max);
+    const div = document.createElement('div');
+    div.style.cssText = 'background:#f6f7f9;border-radius:8px;padding:10px;text-align:center;';
+    div.innerHTML = '<div style="font-size:11px;color:#999;margin-bottom:4px;">' + dimNames[i] + '</div><div style="font-size:20px;font-weight:700;color:' + level.color + ';">' + score + '</div><div style="font-size:11px;color:' + level.color + ';margin-top:2px;">' + level.label + '</div>';
+    radar.appendChild(div);
+  });
+
+  const actionDiv = document.getElementById('archive-action');
+  const template = solutionTemplates[currentType] || defaultTemplate;
+  actionDiv.innerHTML = '';
+  template.action.steps.forEach((step, i) => {
+    const div = document.createElement('div');
+    div.style.marginBottom = '6px';
+    div.textContent = (i+1) + '. ' + step;
+    actionDiv.appendChild(div);
+  });
+
+  const track = document.getElementById('archive-track');
+  track.innerHTML = '';
+  const days = ['周一','周二','周三','周四','周五','周六','周日'];
+  days.forEach((day, i) => {
+    const div = document.createElement('div');
+    div.className = 'track-day';
+    div.dataset.day = i;
+    div.innerHTML = '<div class="track-day-label">' + day + '</div><div class="track-day-icon">?</div>';
+    div.addEventListener('click', function() {
+      this.classList.toggle('done');
+      if (this.classList.contains('done')) {
+        this.querySelector('.track-day-icon').textContent = '✓';
+      } else {
+        this.querySelector('.track-day-icon').textContent = '?';
+      }
+    });
+    track.appendChild(div);
+  });
+}
+
+function saveArchive() {
+  alert('档案已保存！您可以截图保存或复制内容到备忘录。');
+}
+
+function resetAll() {
+  document.getElementById('child-age').value = '';
+  document.getElementById('duration').value = '';
+  document.getElementById('scene-type').value = '';
+  document.getElementById('scene-desc').value = '';
+  document.getElementById('char-count').textContent = '0字';
+  document.querySelectorAll('.tag-btn').forEach(btn => btn.classList.remove('active'));
+  selectedMethods = [];
+  goPanel(1);
+}
+</script>
+</body>
+</html>
